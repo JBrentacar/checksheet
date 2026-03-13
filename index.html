@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>JBレンタカー - 貸出チェックシート</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #0068e9;
+            color: white;
+            padding: 16px 20px;
+            text-align: center;
+        }
+        .logo { font-size: 22px; font-weight: bold; }
+        .logo-sub { font-size: 13px; opacity: 0.85; margin-top: 3px; }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 60px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #0068e9;
+            border-left: 4px solid #ffc600;
+            padding-left: 12px;
+            margin: 0 0 16px;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #444;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #fafafa;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #0068e9;
+            box-shadow: 0 0 0 3px rgba(0,104,233,0.15);
+        }
+
+        .hint {
+            background: #f0f4ff;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .car-views-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .car-view-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .car-view-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .canvas-wrap {
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: crosshair;
+            background: #fafafa;
+            width: 100%;
+        }
+
+        .canvas-wrap canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .view-note {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        #sig-canvas {
+            display: block;
+            width: 100%;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .sig-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .sig-note { font-size: 12px; color: #999; }
+
+        .btn-clear {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 6px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: #0068e9;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,104,233,0.3);
+            transition: all 0.2s;
+        }
+
+        .submit-btn:hover { background-color: #0051b5; }
+        .submit-btn:disabled { background-color: #aaa; cursor: not-allowed; }
+
+        .toast {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            color: white;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        .toast.show { display: block; }
+        .toast.success { background: #2e7d32; }
+        .toast.error   { background: #c62828; }
+        .toast.info    { background: #555; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">JBレンタカー</div>
+    <div class="logo-sub">貸出チェックシート</div>
+</header>
+
+<div class="container">
+
+    <!-- 基本情報 -->
+    <div class="section">
+        <div class="section-title">基本情報</div>
+        <div class="form-group">
+            <label>管理番号</label>
+            <input type="text" id="mgmt-no" placeholder="例：JB-001">
+        </div>
+        <div class="form-group">
+            <label>車種</label>
+            <input type="text" id="car-type" placeholder="例：ダイハツ ミラ">
+        </div>
+        <div class="form-group">
+            <label>走行距離（km）</label>
+            <input type="number" id="mileage" placeholder="例：12345">
+        </div>
+    </div>
+
+    <!-- 車両チェック -->
+    <div class="section">
+        <div class="section-title">車両状態チェック</div>
+        <div class="hint">傷・凹みのある箇所をタップして番号をつけてください。<br>同じ箇所をタップすると削除できます。</div>
+        <div class="car-views-grid">
+            <div class="car-view-item">
+                <div class="car-view-label">前面</div>
+                <div class="canvas-wrap">
+                    <canvas id="canvas-front"></canvas>
+                </div>
+                <div class="view-note">タップで記録</div>
+            </div>
+            <div class="car-view-item">
+                <div class="car-view-label">後面</div>
+                <div class="canvas-wrap">
+                    <canvas id="canvas-rear"></canvas>
+                </div>
+                <div class="view-note">タップで記録</div>
+            </div>
+            <div class="car-view-item">
+                <div class="car-view-label">左側面</div>
+                <div class="canvas-wrap">
+                    <canvas id="canvas-left"></canvas>
+                </div>
+                <div class="view-note">タップで記録</div>
+            </div>
+            <div class="car-view-item">
+                <div class="car-view-label">右側面</div>
+                <div class="canvas-wrap">
+                    <canvas id="canvas-right"></canvas>
+                </div>
+                <div class="view-note">タップで記録</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 署名 -->
+    <div class="section">
+        <div class="section-title">お客様署名</div>
+        <p style="font-size:13px;color:#666;margin:0 0 10px;">上記内容を確認の上、署名してください。</p>
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-actions">
+            <span class="sig-note">指またはペンで署名</span>
+            <button class="btn-clear" onclick="clearSig()">クリア</button>
+        </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="saveImage()">画像として保存</button>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ============================================================
+// 描画ユーティリティ
+// ============================================================
+function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.arcTo(x+w, y,   x+w, y+r,   r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+    ctx.lineTo(x+r, y+h);
+    ctx.arcTo(x, y+h,   x, y+h-r,   r);
+    ctx.lineTo(x, y+r);
+    ctx.arcTo(x, y,     x+r, y,      r);
+    ctx.closePath();
+}
+
+// ============================================================
+// 前面
+// ============================================================
+function drawFront(ctx, W, H) {
+    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+
+    // キャビン
+    ctx.fillStyle = '#ddd';
+    ctx.beginPath();
+    ctx.moveTo(W*.24,H*.46); ctx.lineTo(W*.16,H*.13);
+    ctx.lineTo(W*.84,H*.13); ctx.lineTo(W*.76,H*.46);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // フロントガラス
+    ctx.fillStyle = '#c5dff5';
+    ctx.beginPath();
+    ctx.moveTo(W*.26,H*.44); ctx.lineTo(W*.19,H*.17);
+    ctx.lineTo(W*.81,H*.17); ctx.lineTo(W*.74,H*.44);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // ボンネット
+    ctx.fillStyle = '#e5e5e5';
+    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4);
+    ctx.fill(); ctx.stroke();
+
+    // 左ヘッドライト
+    ctx.fillStyle = '#fffacc';
+    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3);
+    ctx.fill(); ctx.stroke();
+
+    // 右ヘッドライト
+    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3);
+    ctx.fill(); ctx.stroke();
+
+    // グリル
+    ctx.fillStyle = '#aaa';
+    rrect(ctx, W*.37,H*.53, W*.26,H*.15, 3);
+    ctx.fill(); ctx.stroke();
+
+    // バンパー
+    ctx.fillStyle = '#ccc';
+    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5);
+    ctx.fill(); ctx.stroke();
+
+    // 左ミラー
+    ctx.fillStyle = '#bbb';
+    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2);
+    ctx.fill(); ctx.stroke();
+
+    // 右ミラー
+    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.fillText('前', W/2, H*.97);
+}
+
+// ============================================================
+// 後面
+// ============================================================
+function drawRear(ctx, W, H) {
+    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+
+    // キャビン
+    ctx.fillStyle = '#ddd';
+    ctx.beginPath();
+    ctx.moveTo(W*.24,H*.46); ctx.lineTo(W*.16,H*.13);
+    ctx.lineTo(W*.84,H*.13); ctx.lineTo(W*.76,H*.46);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // リアガラス
+    ctx.fillStyle = '#c5dff5';
+    ctx.beginPath();
+    ctx.moveTo(W*.26,H*.44); ctx.lineTo(W*.19,H*.17);
+    ctx.lineTo(W*.81,H*.17); ctx.lineTo(W*.74,H*.44);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // トランク
+    ctx.fillStyle = '#e5e5e5';
+    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4);
+    ctx.fill(); ctx.stroke();
+
+    // 左テールランプ
+    ctx.fillStyle = '#ffaaaa';
+    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3);
+    ctx.fill(); ctx.stroke();
+
+    // 右テールランプ
+    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3);
+    ctx.fill(); ctx.stroke();
+
+    // ナンバープレート
+    ctx.fillStyle = '#eef';
+    rrect(ctx, W*.38,H*.55, W*.24,H*.1, 2);
+    ctx.fill(); ctx.stroke();
+
+    // バンパー
+    ctx.fillStyle = '#ccc';
+    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5);
+    ctx.fill(); ctx.stroke();
+
+    // 左ミラー
+    ctx.fillStyle = '#bbb';
+    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2);
+    ctx.fill(); ctx.stroke();
+
+    // 右ミラー
+    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.fillText('後', W/2, H*.97);
+}
+
+// ============================================================
+// 側面
+// ============================================================
+function drawSide(ctx, W, H, label) {
+    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+
+    // ボディ
+    ctx.fillStyle = '#e5e5e5';
+    ctx.beginPath();
+    ctx.moveTo(W*.05, H*.72);
+    ctx.lineTo(W*.05, H*.62);
+    ctx.quadraticCurveTo(W*.07, H*.48, W*.15, H*.46);
+    ctx.lineTo(W*.22, H*.46);
+    ctx.lineTo(W*.28, H*.24);
+    ctx.lineTo(W*.72, H*.24);
+    ctx.lineTo(W*.82, H*.42);
+    ctx.lineTo(W*.90, H*.48);
+    ctx.lineTo(W*.94, H*.62);
+    ctx.lineTo(W*.94, H*.72);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // 窓
+    ctx.fillStyle = '#c5dff5';
+    ctx.beginPath();
+    ctx.moveTo(W*.29,H*.44); ctx.lineTo(W*.32,H*.28);
+    ctx.lineTo(W*.70,H*.28); ctx.lineTo(W*.79,H*.44);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // ドア境界線
+    ctx.beginPath();
+    ctx.moveTo(W*.52,H*.28); ctx.lineTo(W*.52,H*.70);
+    ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 1.2;
+
+    // 前輪
+    ctx.beginPath(); ctx.arc(W*.23,H*.74, H*.15, 0, Math.PI*2);
+    ctx.fillStyle = '#555'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(W*.23,H*.74, H*.08, 0, Math.PI*2);
+    ctx.fillStyle = '#bbb'; ctx.fill(); ctx.stroke();
+
+    // 後輪
+    ctx.beginPath(); ctx.arc(W*.77,H*.74, H*.15, 0, Math.PI*2);
+    ctx.fillStyle = '#555'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(W*.77,H*.74, H*.08, 0, Math.PI*2);
+    ctx.fillStyle = '#bbb'; ctx.fill(); ctx.stroke();
+
+    // ミラー
+    ctx.fillStyle = '#bbb';
+    rrect(ctx, W*.14,H*.38, W*.06,H*.09, 2);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.fillText(label, W/2, H*.97);
+}
+
+// ============================================================
+// マーカー
+// ============================================================
+function drawMarker(ctx, x, y, num) {
+    const r = 10;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(210,30,30,0.9)'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${r*1.4}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(num), x, y);
+    ctx.restore();
+}
+
+// ============================================================
+// キャンバス初期化
+// ============================================================
+const views = ['front','rear','left','right'];
+const markers = { front:[], rear:[], left:[], right:[] };
+
+function initCanvas(view) {
+    const canvas = document.getElementById('canvas-' + view);
+    canvas.width  = 160;
+    canvas.height = 120;
+
+    canvas.addEventListener('click', e => onCanvasClick(e, view));
+    canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        onCanvasClick(e.changedTouches[0], view, canvas);
+    }, { passive: false });
+}
+
+function redraw(view) {
+    const canvas = document.getElementById('canvas-' + view);
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (view === 'front')      drawFront(ctx, W, H);
+    else if (view === 'rear')  drawRear(ctx, W, H);
+    else if (view === 'left')  drawSide(ctx, W, H, '左');
+    else                       drawSide(ctx, W, H, '右');
+
+    markers[view].forEach((m, i) => drawMarker(ctx, m.x, m.y, i+1));
+}
+
+function onCanvasClick(e, view, canvasArg) {
+    const canvas = canvasArg || document.getElementById('canvas-' + view);
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvas.width  / rect.width;
+    const sy = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * sx;
+    const y = (e.clientY - rect.top)  * sy;
+
+    const HIT = 14;
+    const idx = markers[view].findIndex(m => Math.hypot(m.x-x, m.y-y) < HIT);
+    if (idx >= 0) markers[view].splice(idx, 1);
+    else          markers[view].push({ x, y });
+    redraw(view);
+}
+
+// ============================================================
+// 署名パッド
+// ============================================================
+const sigCanvas = document.getElementById('sig-canvas');
+const sigCtx = sigCanvas.getContext('2d');
+sigCanvas.width = 560; sigCanvas.height = 160;
+let sigDrawing = false;
+
+function sigPos(e) {
+    const r = sigCanvas.getBoundingClientRect();
+    const sx = sigCanvas.width  / r.width;
+    const sy = sigCanvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left)*sx, y: (src.clientY - r.top)*sy };
+}
+
+function sigStart(e) {
+    sigDrawing = true;
+    const p = sigPos(e);
+    sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y);
+}
+function sigMove(e) {
+    if (!sigDrawing) return;
+    const p = sigPos(e);
+    sigCtx.lineTo(p.x, p.y);
+    sigCtx.strokeStyle = '#111'; sigCtx.lineWidth = 2; sigCtx.lineCap = 'round';
+    sigCtx.stroke();
+}
+function sigEnd() { sigDrawing = false; }
+
+sigCanvas.addEventListener('mousedown',  sigStart);
+sigCanvas.addEventListener('mousemove',  sigMove);
+sigCanvas.addEventListener('mouseup',    sigEnd);
+sigCanvas.addEventListener('mouseleave', sigEnd);
+sigCanvas.addEventListener('touchstart', e => { e.preventDefault(); sigStart(e); }, { passive: false });
+sigCanvas.addEventListener('touchmove',  e => { e.preventDefault(); sigMove(e);  }, { passive: false });
+sigCanvas.addEventListener('touchend',   sigEnd);
+
+function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height); }
+
+// ============================================================
+// サマリー画像生成
+// ============================================================
+function buildSummaryImage() {
+    const W = 640, H = 840;
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const c = off.getContext('2d');
+
+    c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+
+    // ヘッダー
+    c.fillStyle = '#0068e9'; c.fillRect(0, 0, W, 58);
+    c.fillStyle = '#fff'; c.font = 'bold 20px sans-serif';
+    c.textAlign = 'center'; c.fillText('JBレンタカー 貸出チェックシート', W/2, 36);
+
+    // 基本情報
+    const now = new Date();
+    const ds = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const infos = [
+        `日時：${ds}`,
+        `管理番号：${document.getElementById('mgmt-no').value || '—'}`,
+        `車種：${document.getElementById('car-type').value || '—'}`,
+        `走行距離：${document.getElementById('mileage').value || '—'} km`
+    ];
+    c.fillStyle = '#333'; c.font = '15px sans-serif'; c.textAlign = 'left';
+    infos.forEach((t, i) => c.fillText(t, 30, 85 + i*24));
+
+    // 車両ビュー（2x2）
+    const vW = 280, vH = 200;
+    [
+        { view:'front', x:20,  y:195 },
+        { view:'rear',  x:340, y:195 },
+        { view:'left',  x:20,  y:415 },
+        { view:'right', x:340, y:415 },
+    ].forEach(({ view, x, y }) => {
+        c.drawImage(document.getElementById('canvas-' + view), x, y, vW, vH);
+        c.strokeStyle = '#ddd'; c.lineWidth = 1;
+        c.strokeRect(x, y, vW, vH);
+    });
+
+    // 署名エリア
+    c.fillStyle = '#f5f7ff'; c.fillRect(20, 640, W-40, 170);
+    c.strokeStyle = '#ccc'; c.lineWidth = 1; c.strokeRect(20, 640, W-40, 170);
+    c.fillStyle = '#555'; c.font = 'bold 13px sans-serif'; c.textAlign = 'left';
+    c.fillText('お客様署名', 30, 660);
+    const sw = W - 60;
+    const sh = sigCanvas.height * (sw / sigCanvas.width);
+    c.drawImage(sigCanvas, 30, 668, sw, Math.min(sh, 130));
+
+    return off.toDataURL('image/jpeg', 0.85);
+}
+
+// ============================================================
+// 画像保存
+// ============================================================
+function saveImage() {
+    const mgmt = document.getElementById('mgmt-no').value.trim();
+    const car  = document.getElementById('car-type').value.trim();
+    const mile = document.getElementById('mileage').value.trim();
+
+    if (!mgmt || !car || !mile) {
+        showToast('管理番号・車種・走行距離を入力してください', 'error');
+        return;
+    }
+
+    const image = buildSummaryImage();
+    const now = new Date();
+    const filename = `checksheet_${mgmt}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.jpg`;
+
+    const a = document.createElement('a');
+    a.href = image;
+    a.download = filename;
+    a.click();
+
+    showToast('保存しました', 'success');
+}
+
+// ============================================================
+// トースト
+// ============================================================
+function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = `toast show ${type}`;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+
+// 初期化
+views.forEach(v => { initCanvas(v); redraw(v); });
+</script>
+</body>
+</html>
