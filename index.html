@@ -847,7 +847,7 @@ function buildSummaryImage() {
 // ============================================================
 // 送信して保存
 // ============================================================
-function saveImage() {
+async function saveImage() {
     const mgmt = document.getElementById('mgmt-no').value.trim();
     const car  = document.getElementById('car-type').value.trim();
     const mile = document.getElementById('mileage').value.trim();
@@ -857,15 +857,40 @@ function saveImage() {
         return;
     }
 
+    const btn = document.querySelector('.save-btn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
     const now = new Date();
     const ds = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    const imageData = buildSummaryImage();
+    const base64 = imageData.split(',')[1];
 
-    // ① SSGFormへ送信（テキスト情報）
+    // ① imgbbに画像をアップロード
+    let imageUrl = '（画像アップロード失敗）';
+    try {
+        const fd = new FormData();
+        fd.append('key', '8f8fdbe7d09c66448c9f901c65f2bca5');
+        fd.append('image', base64);
+        const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+        const json = await res.json();
+        if (json.success) imageUrl = json.data.url;
+    } catch (e) {
+        console.error('imgbb upload error:', e);
+    }
+
+    // ② SSGFormへ送信（テキスト＋画像URL）
     const form = document.createElement('form');
     form.action = 'https://ssgform.com/s/sboITBHA7Zv6';
     form.method = 'POST';
     form.target = 'ssgform-target';
-    const fields = { '日時': ds, '管理番号': mgmt, '車種': car, '走行距離': mile + ' km' };
+    const fields = {
+        '日時': ds,
+        '管理番号': mgmt,
+        '車種': car,
+        '走行距離': mile + ' km',
+        'チェックシート画像': imageUrl
+    };
     Object.entries(fields).forEach(([name, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -877,14 +902,16 @@ function saveImage() {
     form.submit();
     document.body.removeChild(form);
 
-    // ② 画像を端末に保存
+    // ③ 画像を端末に保存
     const filename = `checksheet_${mgmt}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.jpg`;
     const a = document.createElement('a');
-    a.href = buildSummaryImage();
+    a.href = imageData;
     a.download = filename;
     a.click();
 
     showToast('送信・保存しました', 'success');
+    btn.disabled = false;
+    btn.textContent = '送信して保存';
 }
 
 // ============================================================
