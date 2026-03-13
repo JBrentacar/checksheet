@@ -389,8 +389,8 @@ function drawCarIllustration(ctx, W, H, view) {
     ctx.clearRect(0, 0, W, H);
     if      (view === 'front') drawFront(ctx, W, H);
     else if (view === 'rear')  drawRear(ctx, W, H);
-    else if (view === 'left')  drawSide(ctx, W, H, '左');
-    else                       drawSide(ctx, W, H, '右');
+    else if (view === 'left')  drawSide(ctx, W, H, '左', false);
+    else                       drawSide(ctx, W, H, '右', true);
 }
 
 function drawFront(ctx, W, H) {
@@ -465,8 +465,10 @@ function drawRear(ctx, W, H) {
     ctx.textAlign = 'center'; ctx.fillText('後', W/2, H*.97);
 }
 
-function drawSide(ctx, W, H, label) {
+function drawSide(ctx, W, H, label, flip) {
     ctx.lineWidth = W/130; ctx.strokeStyle = '#555';
+
+    if (flip) { ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); }
 
     ctx.fillStyle = '#e5e5e5';
     ctx.beginPath();
@@ -502,6 +504,9 @@ function drawSide(ctx, W, H, label) {
     ctx.fillStyle = '#bbb';
     rrect(ctx, W*.14,H*.38, W*.06,H*.09, 2); ctx.fill(); ctx.stroke();
 
+    if (flip) ctx.restore();
+
+    // ラベルは反転しない
     ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.fillText(label, W/2, H*.97);
 }
