@@ -53,6 +53,19 @@
             color: #444;
         }
 
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #fafafa;
+        }
+        select:focus {
+            outline: none;
+            border-color: #0068e9;
+            box-shadow: 0 0 0 3px rgba(0,104,233,.15);
+        }
         input[type="text"], input[type="number"] {
             width: 100%;
             padding: 10px 12px;
@@ -267,12 +280,18 @@
     <div class="section">
         <div class="section-title">基本情報</div>
         <div class="form-group">
+            <label>車両選択</label>
+            <select id="car-select" onchange="onCarSelect()">
+                <option value="">選択してください</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>管理番号</label>
-            <input type="text" id="mgmt-no" placeholder="例：JB-001">
+            <input type="text" id="mgmt-no" placeholder="自動入力">
         </div>
         <div class="form-group">
             <label>車種</label>
-            <input type="text" id="car-type" placeholder="例：ダイハツ ミラ">
+            <input type="text" id="car-type" placeholder="自動入力">
         </div>
         <div class="form-group">
             <label>走行距離（km）</label>
@@ -350,6 +369,77 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ============================================================
+// 車両データ
+// ============================================================
+const CAR_LIST = [
+    {no:1,  name:"ホンダ ライフ（薄茶）"},
+    {no:3,  name:"ホンダ ライフ（水色）"},
+    {no:6,  name:"ホンダ ライフ（グレー）"},
+    {no:9,  name:"ホンダ フィット(白)"},
+    {no:10, name:"ホンダ フィット（黒）"},
+    {no:11, name:"トヨタ ヴィッツ（シルバー）"},
+    {no:12, name:"ホンダ ライフ（赤茶色）"},
+    {no:13, name:"ダイハツ ハイゼット（白）"},
+    {no:14, name:"ホンダ フィットハイブリッド（シルバー）"},
+    {no:16, name:"スズキ アルトラパン"},
+    {no:17, name:"スズキ セルボ"},
+    {no:18, name:"スズキ ワゴンR"},
+    {no:19, name:"ホンダ フィットハイブリッド（シルバー）"},
+    {no:20, name:"ホンダ ライフ（シルバー）"},
+    {no:21, name:"ホンダ バモス（茶色）"},
+    {no:23, name:"ダイハツ ミラ（シルバー）"},
+    {no:24, name:"ホンダ フィットハイブリッド（白）"},
+    {no:28, name:"日産 オッティ（白）"},
+    {no:29, name:"スバル プレオバン（シルバー）"},
+    {no:30, name:"スズキ アルト（水色）"},
+    {no:31, name:"日産 オッティ（水色）"},
+    {no:32, name:"スバル プレオバン（白）"},
+    {no:33, name:"ダイハツ エッセ（クリーム色）"},
+    {no:34, name:"ホンダ ライフ（シルバー）"},
+    {no:36, name:"三菱 eKワゴン"},
+    {no:37, name:"スズキ MRワゴン（水色）"},
+    {no:38, name:"スバル ステラ（白）"},
+    {no:39, name:"スズキ アルト（水色）"},
+    {no:40, name:"ダイハツ ムーブ（黒色）"},
+    {no:41, name:"スズキ アルト（ベージュ）"},
+    {no:42, name:"日産 オッティ（黒色）"},
+    {no:43, name:"ホンダ ライフ（シルバー）"},
+    {no:44, name:"ホンダ ライフ（シルバー）"},
+    {no:45, name:"スズキ アルト（茶色）"},
+    {no:46, name:"三菱 eKワゴン(白)"},
+    {no:47, name:"ダイハツ ミラ（白）"},
+    {no:48, name:"スズキ アルトラパン（茶）"},
+    {no:50, name:"ホンダ フィット（黄色）"},
+    {no:51, name:"日産 モコ（ピンク）"},
+    {no:53, name:"スズキ ワゴンR（シルバー）"},
+    {no:54, name:"ダイハツ エッセ（黒）"},
+    {no:55, name:"スズキ ラパン（水色）"},
+    {no:56, name:"日産 クリッパー（黒）"},
+    {no:99, name:"ダイハツ ハイゼット（ダンプ型）"},
+    {no:100,name:"トヨタ ジル"},
+];
+
+function initCarSelect() {
+    const sel = document.getElementById('car-select');
+    CAR_LIST.forEach(car => {
+        const opt = document.createElement('option');
+        opt.value = car.no;
+        opt.textContent = `${car.no}番 - ${car.name}`;
+        sel.appendChild(opt);
+    });
+}
+
+function onCarSelect() {
+    const sel = document.getElementById('car-select');
+    const no  = parseInt(sel.value);
+    if (!no) return;
+    const car = CAR_LIST.find(c => c.no === no);
+    if (!car) return;
+    document.getElementById('mgmt-no').value  = car.no;
+    document.getElementById('car-type').value = car.name;
+}
+
 // ============================================================
 // 定数・状態
 // ============================================================
@@ -789,6 +879,7 @@ function showToast(msg, type) {
 // ============================================================
 // 初期化
 // ============================================================
+initCarSelect();
 initThumbs();
 </script>
 </body>
