@@ -5,22 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>JBレンタカー - 貸出チェックシート</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
-            background-color: #f8f9fa;
+            background: #f8f9fa;
             color: #333;
-            margin: 0;
-            padding: 0;
         }
         header {
-            background-color: #0068e9;
+            background: #0068e9;
             color: white;
             padding: 16px 20px;
             text-align: center;
         }
-        .logo { font-size: 22px; font-weight: bold; }
-        .logo-sub { font-size: 13px; opacity: 0.85; margin-top: 3px; }
+        .logo     { font-size: 22px; font-weight: bold; }
+        .logo-sub { font-size: 13px; opacity: .85; margin-top: 3px; }
 
         .container {
             max-width: 640px;
@@ -31,7 +29,7 @@
         .section {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,.08);
             padding: 20px;
             margin-bottom: 20px;
         }
@@ -42,7 +40,7 @@
             color: #0068e9;
             border-left: 4px solid #ffc600;
             padding-left: 12px;
-            margin: 0 0 16px;
+            margin-bottom: 16px;
         }
 
         .form-group { margin-bottom: 14px; }
@@ -63,11 +61,10 @@
             font-size: 16px;
             background: #fafafa;
         }
-
         input:focus {
             outline: none;
             border-color: #0068e9;
-            box-shadow: 0 0 0 3px rgba(0,104,233,0.15);
+            box-shadow: 0 0 0 3px rgba(0,104,233,.15);
         }
 
         .hint {
@@ -77,49 +74,125 @@
             font-size: 13px;
             color: #555;
             margin-bottom: 16px;
-            line-height: 1.6;
         }
 
-        .car-views-grid {
+        /* サムネイルグリッド */
+        .car-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }
 
-        .car-view-item {
+        .car-card {
             display: flex;
             flex-direction: column;
             align-items: center;
+            cursor: pointer;
         }
 
-        .car-view-label {
+        .car-card-label {
             font-size: 13px;
             font-weight: bold;
             color: #444;
             margin-bottom: 6px;
         }
 
-        .canvas-wrap {
+        .thumb-wrap {
+            width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fafafa;
+            transition: border-color .2s;
+            position: relative;
+        }
+        .thumb-wrap:hover { border-color: #0068e9; }
+        .thumb-wrap canvas { display: block; width: 100%; height: auto; }
+
+        .thumb-edit-hint {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            font-size: 11px;
+            color: #aaa;
+        }
+        .thumb-wrap.has-drawing { border-color: #e00; }
+
+        /* モーダル */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-box {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            width: min(96vw, 520px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: bold;
+            color: #0068e9;
+        }
+
+        .modal-actions { display: flex; gap: 8px; }
+
+        .btn-erase {
+            background: #fff0f0;
+            border: 1px solid #ffaaaa;
+            color: #c62828;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-done {
+            background: #0068e9;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            padding: 6px 18px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-canvas-wrap {
             border: 1.5px solid #ddd;
             border-radius: 8px;
             overflow: hidden;
-            cursor: crosshair;
             background: #fafafa;
-            width: 100%;
+            cursor: crosshair;
+            touch-action: none;
         }
 
-        .canvas-wrap canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-        }
+        #modal-canvas { display: block; width: 100%; height: auto; }
 
-        .view-note {
-            font-size: 11px;
+        .modal-pen-hint {
+            text-align: center;
+            font-size: 12px;
             color: #aaa;
-            margin-top: 4px;
         }
 
+        /* 署名 */
         #sig-canvas {
             display: block;
             width: 100%;
@@ -136,7 +209,6 @@
             align-items: center;
             margin-top: 8px;
         }
-
         .sig-note { font-size: 12px; color: #999; }
 
         .btn-clear {
@@ -149,22 +221,20 @@
             color: #555;
         }
 
-        .submit-btn {
+        .save-btn {
             width: 100%;
             padding: 16px;
-            background-color: #0068e9;
+            background: #0068e9;
             color: white;
             font-size: 18px;
             font-weight: bold;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,104,233,0.3);
-            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,104,233,.3);
+            transition: background .2s;
         }
-
-        .submit-btn:hover { background-color: #0051b5; }
-        .submit-btn:disabled { background-color: #aaa; cursor: not-allowed; }
+        .save-btn:hover { background: #0051b5; }
 
         .toast {
             display: none;
@@ -182,7 +252,6 @@
         .toast.show { display: block; }
         .toast.success { background: #2e7d32; }
         .toast.error   { background: #c62828; }
-        .toast.info    { background: #555; }
     </style>
 </head>
 <body>
@@ -214,35 +283,35 @@
     <!-- 車両チェック -->
     <div class="section">
         <div class="section-title">車両状態チェック</div>
-        <div class="hint">傷・凹みのある箇所をタップして番号をつけてください。<br>同じ箇所をタップすると削除できます。</div>
-        <div class="car-views-grid">
-            <div class="car-view-item">
-                <div class="car-view-label">前面</div>
-                <div class="canvas-wrap">
-                    <canvas id="canvas-front"></canvas>
+        <div class="hint">各面をタップして拡大し、傷・凹みの箇所を赤ペンで描いてください。</div>
+        <div class="car-grid">
+            <div class="car-card" onclick="openModal('front')">
+                <div class="car-card-label">前面</div>
+                <div class="thumb-wrap" id="thumb-wrap-front">
+                    <canvas id="thumb-front"></canvas>
+                    <span class="thumb-edit-hint">タップして描く</span>
                 </div>
-                <div class="view-note">タップで記録</div>
             </div>
-            <div class="car-view-item">
-                <div class="car-view-label">後面</div>
-                <div class="canvas-wrap">
-                    <canvas id="canvas-rear"></canvas>
+            <div class="car-card" onclick="openModal('rear')">
+                <div class="car-card-label">後面</div>
+                <div class="thumb-wrap" id="thumb-wrap-rear">
+                    <canvas id="thumb-rear"></canvas>
+                    <span class="thumb-edit-hint">タップして描く</span>
                 </div>
-                <div class="view-note">タップで記録</div>
             </div>
-            <div class="car-view-item">
-                <div class="car-view-label">左側面</div>
-                <div class="canvas-wrap">
-                    <canvas id="canvas-left"></canvas>
+            <div class="car-card" onclick="openModal('left')">
+                <div class="car-card-label">左側面</div>
+                <div class="thumb-wrap" id="thumb-wrap-left">
+                    <canvas id="thumb-left"></canvas>
+                    <span class="thumb-edit-hint">タップして描く</span>
                 </div>
-                <div class="view-note">タップで記録</div>
             </div>
-            <div class="car-view-item">
-                <div class="car-view-label">右側面</div>
-                <div class="canvas-wrap">
-                    <canvas id="canvas-right"></canvas>
+            <div class="car-card" onclick="openModal('right')">
+                <div class="car-card-label">右側面</div>
+                <div class="thumb-wrap" id="thumb-wrap-right">
+                    <canvas id="thumb-right"></canvas>
+                    <span class="thumb-edit-hint">タップして描く</span>
                 </div>
-                <div class="view-note">タップで記録</div>
             </div>
         </div>
     </div>
@@ -250,7 +319,7 @@
     <!-- 署名 -->
     <div class="section">
         <div class="section-title">お客様署名</div>
-        <p style="font-size:13px;color:#666;margin:0 0 10px;">上記内容を確認の上、署名してください。</p>
+        <p style="font-size:13px;color:#666;margin-bottom:10px;">上記内容を確認の上、署名してください。</p>
         <canvas id="sig-canvas"></canvas>
         <div class="sig-actions">
             <span class="sig-note">指またはペンで署名</span>
@@ -258,16 +327,46 @@
         </div>
     </div>
 
-    <button class="submit-btn" id="submit-btn" onclick="saveImage()">画像として保存</button>
+    <button class="save-btn" onclick="saveImage()">画像として保存</button>
+</div>
 
+<!-- モーダル -->
+<div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">前面</span>
+            <div class="modal-actions">
+                <button class="btn-erase" onclick="eraseModal()">消去</button>
+                <button class="btn-done"  onclick="closeModal()">完了</button>
+            </div>
+        </div>
+        <div class="modal-canvas-wrap">
+            <canvas id="modal-canvas"></canvas>
+        </div>
+        <div class="modal-pen-hint">赤ペンで傷・凹みの箇所を描いてください</div>
+    </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ============================================================
+// 定数・状態
+// ============================================================
+const THUMB_W = 160, THUMB_H = 120;
+const MODAL_W = 480, MODAL_H = 360;
+const VIEWS = ['front','rear','left','right'];
+const VIEW_LABELS = { front:'前面', rear:'後面', left:'左側面', right:'右側面' };
+
+// 描画データ（正規化座標 0-1）
+const strokes = { front:[], rear:[], left:[], right:[] };
+
+let activeView = null;
+let modalDrawing = false;
+let modalCurrentStroke = [];
 
 // ============================================================
-// 描画ユーティリティ
+// rrect ユーティリティ
 // ============================================================
 function rrect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -284,254 +383,288 @@ function rrect(ctx, x, y, w, h, r) {
 }
 
 // ============================================================
-// 前面
+// 車両イラスト描画
 // ============================================================
-function drawFront(ctx, W, H) {
-    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+function drawCarIllustration(ctx, W, H, view) {
+    ctx.clearRect(0, 0, W, H);
+    if      (view === 'front') drawFront(ctx, W, H);
+    else if (view === 'rear')  drawRear(ctx, W, H);
+    else if (view === 'left')  drawSide(ctx, W, H, '左');
+    else                       drawSide(ctx, W, H, '右');
+}
 
-    // キャビン
+function drawFront(ctx, W, H) {
+    ctx.lineWidth = W/130; ctx.strokeStyle = '#555';
+
     ctx.fillStyle = '#ddd';
     ctx.beginPath();
     ctx.moveTo(W*.24,H*.46); ctx.lineTo(W*.16,H*.13);
     ctx.lineTo(W*.84,H*.13); ctx.lineTo(W*.76,H*.46);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // フロントガラス
     ctx.fillStyle = '#c5dff5';
     ctx.beginPath();
     ctx.moveTo(W*.26,H*.44); ctx.lineTo(W*.19,H*.17);
     ctx.lineTo(W*.81,H*.17); ctx.lineTo(W*.74,H*.44);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // ボンネット
     ctx.fillStyle = '#e5e5e5';
-    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4); ctx.fill(); ctx.stroke();
 
-    // 左ヘッドライト
     ctx.fillStyle = '#fffacc';
-    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3); ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3); ctx.fill(); ctx.stroke();
 
-    // 右ヘッドライト
-    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3);
-    ctx.fill(); ctx.stroke();
-
-    // グリル
     ctx.fillStyle = '#aaa';
-    rrect(ctx, W*.37,H*.53, W*.26,H*.15, 3);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.37,H*.53, W*.26,H*.15, 3); ctx.fill(); ctx.stroke();
 
-    // バンパー
     ctx.fillStyle = '#ccc';
-    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5); ctx.fill(); ctx.stroke();
 
-    // 左ミラー
     ctx.fillStyle = '#bbb';
-    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2);
-    ctx.fill(); ctx.stroke();
-
-    // 右ミラー
-    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2); ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2); ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.fillText('前', W/2, H*.97);
 }
 
-// ============================================================
-// 後面
-// ============================================================
 function drawRear(ctx, W, H) {
-    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+    ctx.lineWidth = W/130; ctx.strokeStyle = '#555';
 
-    // キャビン
     ctx.fillStyle = '#ddd';
     ctx.beginPath();
     ctx.moveTo(W*.24,H*.46); ctx.lineTo(W*.16,H*.13);
     ctx.lineTo(W*.84,H*.13); ctx.lineTo(W*.76,H*.46);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // リアガラス
     ctx.fillStyle = '#c5dff5';
     ctx.beginPath();
     ctx.moveTo(W*.26,H*.44); ctx.lineTo(W*.19,H*.17);
     ctx.lineTo(W*.81,H*.17); ctx.lineTo(W*.74,H*.44);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // トランク
     ctx.fillStyle = '#e5e5e5';
-    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.09,H*.44, W*.82,H*.3, 4); ctx.fill(); ctx.stroke();
 
-    // 左テールランプ
     ctx.fillStyle = '#ffaaaa';
-    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.11,H*.49, W*.2,H*.13, 3); ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3); ctx.fill(); ctx.stroke();
 
-    // 右テールランプ
-    rrect(ctx, W*.69,H*.49, W*.2,H*.13, 3);
-    ctx.fill(); ctx.stroke();
-
-    // ナンバープレート
     ctx.fillStyle = '#eef';
-    rrect(ctx, W*.38,H*.55, W*.24,H*.1, 2);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.38,H*.55, W*.24,H*.1, 2); ctx.fill(); ctx.stroke();
 
-    // バンパー
     ctx.fillStyle = '#ccc';
-    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.08,H*.75, W*.84,H*.13, 5); ctx.fill(); ctx.stroke();
 
-    // 左ミラー
     ctx.fillStyle = '#bbb';
-    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2);
-    ctx.fill(); ctx.stroke();
-
-    // 右ミラー
-    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.02,H*.4, W*.07,H*.09, 2); ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.91,H*.4, W*.07,H*.09, 2); ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.fillText('後', W/2, H*.97);
 }
 
-// ============================================================
-// 側面
-// ============================================================
 function drawSide(ctx, W, H, label) {
-    ctx.lineWidth = 1.2; ctx.strokeStyle = '#555';
+    ctx.lineWidth = W/130; ctx.strokeStyle = '#555';
 
-    // ボディ
     ctx.fillStyle = '#e5e5e5';
     ctx.beginPath();
-    ctx.moveTo(W*.05, H*.72);
-    ctx.lineTo(W*.05, H*.62);
-    ctx.quadraticCurveTo(W*.07, H*.48, W*.15, H*.46);
-    ctx.lineTo(W*.22, H*.46);
-    ctx.lineTo(W*.28, H*.24);
-    ctx.lineTo(W*.72, H*.24);
-    ctx.lineTo(W*.82, H*.42);
-    ctx.lineTo(W*.90, H*.48);
-    ctx.lineTo(W*.94, H*.62);
-    ctx.lineTo(W*.94, H*.72);
-    ctx.closePath();
+    ctx.moveTo(W*.05,H*.72); ctx.lineTo(W*.05,H*.62);
+    ctx.quadraticCurveTo(W*.07,H*.48, W*.15,H*.46);
+    ctx.lineTo(W*.22,H*.46); ctx.lineTo(W*.28,H*.24);
+    ctx.lineTo(W*.72,H*.24); ctx.lineTo(W*.82,H*.42);
+    ctx.lineTo(W*.90,H*.48); ctx.lineTo(W*.94,H*.62);
+    ctx.lineTo(W*.94,H*.72); ctx.closePath();
     ctx.fill(); ctx.stroke();
 
-    // 窓
     ctx.fillStyle = '#c5dff5';
     ctx.beginPath();
     ctx.moveTo(W*.29,H*.44); ctx.lineTo(W*.32,H*.28);
     ctx.lineTo(W*.70,H*.28); ctx.lineTo(W*.79,H*.44);
     ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    // ドア境界線
     ctx.beginPath();
     ctx.moveTo(W*.52,H*.28); ctx.lineTo(W*.52,H*.70);
-    ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.strokeStyle = '#555'; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = '#bbb'; ctx.lineWidth = W/200; ctx.stroke();
+    ctx.strokeStyle = '#555'; ctx.lineWidth = W/130;
 
-    // 前輪
     ctx.beginPath(); ctx.arc(W*.23,H*.74, H*.15, 0, Math.PI*2);
     ctx.fillStyle = '#555'; ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(W*.23,H*.74, H*.08, 0, Math.PI*2);
     ctx.fillStyle = '#bbb'; ctx.fill(); ctx.stroke();
 
-    // 後輪
     ctx.beginPath(); ctx.arc(W*.77,H*.74, H*.15, 0, Math.PI*2);
     ctx.fillStyle = '#555'; ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.arc(W*.77,H*.74, H*.08, 0, Math.PI*2);
     ctx.fillStyle = '#bbb'; ctx.fill(); ctx.stroke();
 
-    // ミラー
     ctx.fillStyle = '#bbb';
-    rrect(ctx, W*.14,H*.38, W*.06,H*.09, 2);
-    ctx.fill(); ctx.stroke();
+    rrect(ctx, W*.14,H*.38, W*.06,H*.09, 2); ctx.fill(); ctx.stroke();
 
     ctx.fillStyle = '#777'; ctx.font = `bold ${Math.round(H*.1)}px sans-serif`;
     ctx.textAlign = 'center'; ctx.fillText(label, W/2, H*.97);
 }
 
 // ============================================================
-// マーカー
+// ストローク描画（正規化座標 → ピクセル）
 // ============================================================
-function drawMarker(ctx, x, y, num) {
-    const r = 10;
+function drawStrokes(ctx, W, H, strokeList) {
     ctx.save();
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(210,30,30,0.9)'; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${r*1.4}px sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(String(num), x, y);
+    ctx.strokeStyle = '#dd0000';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    strokeList.forEach(stroke => {
+        if (stroke.length < 2) return;
+        ctx.lineWidth = Math.max(2, W * 0.012);
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x * W, stroke[0].y * H);
+        for (let i = 1; i < stroke.length; i++) {
+            ctx.lineTo(stroke[i].x * W, stroke[i].y * H);
+        }
+        ctx.stroke();
+    });
     ctx.restore();
 }
 
 // ============================================================
-// キャンバス初期化
+// サムネイル初期化・更新
 // ============================================================
-const views = ['front','rear','left','right'];
-const markers = { front:[], rear:[], left:[], right:[] };
-
-function initCanvas(view) {
-    const canvas = document.getElementById('canvas-' + view);
-    canvas.width  = 160;
-    canvas.height = 120;
-
-    canvas.addEventListener('click', e => onCanvasClick(e, view));
-    canvas.addEventListener('touchend', e => {
-        e.preventDefault();
-        onCanvasClick(e.changedTouches[0], view, canvas);
-    }, { passive: false });
+function initThumbs() {
+    VIEWS.forEach(view => {
+        const canvas = document.getElementById('thumb-' + view);
+        canvas.width  = THUMB_W;
+        canvas.height = THUMB_H;
+        redrawThumb(view);
+    });
 }
 
-function redraw(view) {
-    const canvas = document.getElementById('canvas-' + view);
+function redrawThumb(view) {
+    const canvas = document.getElementById('thumb-' + view);
     const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+    drawCarIllustration(ctx, THUMB_W, THUMB_H, view);
+    drawStrokes(ctx, THUMB_W, THUMB_H, strokes[view]);
 
-    if (view === 'front')      drawFront(ctx, W, H);
-    else if (view === 'rear')  drawRear(ctx, W, H);
-    else if (view === 'left')  drawSide(ctx, W, H, '左');
-    else                       drawSide(ctx, W, H, '右');
-
-    markers[view].forEach((m, i) => drawMarker(ctx, m.x, m.y, i+1));
+    const wrap = document.getElementById('thumb-wrap-' + view);
+    wrap.classList.toggle('has-drawing', strokes[view].length > 0);
 }
 
-function onCanvasClick(e, view, canvasArg) {
-    const canvas = canvasArg || document.getElementById('canvas-' + view);
-    const rect = canvas.getBoundingClientRect();
-    const sx = canvas.width  / rect.width;
-    const sy = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * sx;
-    const y = (e.clientY - rect.top)  * sy;
+// ============================================================
+// モーダル
+// ============================================================
+const modalCanvas  = document.getElementById('modal-canvas');
+const modalCtx     = modalCanvas.getContext('2d');
+const modalOverlay = document.getElementById('modal-overlay');
 
-    const HIT = 14;
-    const idx = markers[view].findIndex(m => Math.hypot(m.x-x, m.y-y) < HIT);
-    if (idx >= 0) markers[view].splice(idx, 1);
-    else          markers[view].push({ x, y });
-    redraw(view);
+modalCanvas.width  = MODAL_W;
+modalCanvas.height = MODAL_H;
+
+function openModal(view) {
+    activeView = view;
+    document.getElementById('modal-title').textContent = VIEW_LABELS[view];
+    redrawModal();
+    modalOverlay.classList.add('open');
 }
+
+function closeModal() {
+    if (modalCurrentStroke.length > 1) {
+        strokes[activeView].push([...modalCurrentStroke]);
+        modalCurrentStroke = [];
+    }
+    redrawThumb(activeView);
+    modalOverlay.classList.remove('open');
+    activeView = null;
+}
+
+function eraseModal() {
+    strokes[activeView] = [];
+    modalCurrentStroke = [];
+    redrawModal();
+}
+
+function redrawModal() {
+    drawCarIllustration(modalCtx, MODAL_W, MODAL_H, activeView);
+    drawStrokes(modalCtx, MODAL_W, MODAL_H, strokes[activeView]);
+    if (modalCurrentStroke.length > 1) {
+        drawStrokes(modalCtx, MODAL_W, MODAL_H, [modalCurrentStroke]);
+    }
+}
+
+function getModalPos(e) {
+    const rect = modalCanvas.getBoundingClientRect();
+    const sx = MODAL_W / rect.width;
+    const sy = MODAL_H / rect.height;
+    const src = e.touches ? e.touches[0] : e;
+    return {
+        x: (src.clientX - rect.left) * sx / MODAL_W,
+        y: (src.clientY - rect.top)  * sy / MODAL_H
+    };
+}
+
+// マウス
+modalCanvas.addEventListener('mousedown', e => {
+    modalDrawing = true;
+    const p = getModalPos(e);
+    modalCurrentStroke = [p];
+});
+modalCanvas.addEventListener('mousemove', e => {
+    if (!modalDrawing) return;
+    modalCurrentStroke.push(getModalPos(e));
+    redrawModal();
+});
+modalCanvas.addEventListener('mouseup', () => {
+    if (modalCurrentStroke.length > 1) strokes[activeView].push([...modalCurrentStroke]);
+    modalCurrentStroke = [];
+    modalDrawing = false;
+    redrawModal();
+});
+modalCanvas.addEventListener('mouseleave', () => {
+    if (modalDrawing && modalCurrentStroke.length > 1) strokes[activeView].push([...modalCurrentStroke]);
+    modalCurrentStroke = [];
+    modalDrawing = false;
+});
+
+// タッチ
+modalCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    modalDrawing = true;
+    modalCurrentStroke = [getModalPos(e)];
+}, { passive: false });
+modalCanvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!modalDrawing) return;
+    modalCurrentStroke.push(getModalPos(e));
+    redrawModal();
+}, { passive: false });
+modalCanvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    if (modalCurrentStroke.length > 1) strokes[activeView].push([...modalCurrentStroke]);
+    modalCurrentStroke = [];
+    modalDrawing = false;
+    redrawModal();
+}, { passive: false });
+
+// モーダル外タップで閉じる
+modalOverlay.addEventListener('click', e => {
+    if (e.target === modalOverlay) closeModal();
+});
 
 // ============================================================
 // 署名パッド
 // ============================================================
 const sigCanvas = document.getElementById('sig-canvas');
-const sigCtx = sigCanvas.getContext('2d');
-sigCanvas.width = 560; sigCanvas.height = 160;
+const sigCtx    = sigCanvas.getContext('2d');
+sigCanvas.width  = 560;
+sigCanvas.height = 160;
 let sigDrawing = false;
 
 function sigPos(e) {
-    const r = sigCanvas.getBoundingClientRect();
+    const r  = sigCanvas.getBoundingClientRect();
     const sx = sigCanvas.width  / r.width;
     const sy = sigCanvas.height / r.height;
     const src = e.touches ? e.touches[0] : e;
     return { x: (src.clientX - r.left)*sx, y: (src.clientY - r.top)*sy };
 }
-
 function sigStart(e) {
     sigDrawing = true;
     const p = sigPos(e);
@@ -560,7 +693,7 @@ function clearSig() { sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
 // サマリー画像生成
 // ============================================================
 function buildSummaryImage() {
-    const W = 640, H = 840;
+    const W = 640, H = 860;
     const off = document.createElement('canvas');
     off.width = W; off.height = H;
     const c = off.getContext('2d');
@@ -582,35 +715,41 @@ function buildSummaryImage() {
         `走行距離：${document.getElementById('mileage').value || '—'} km`
     ];
     c.fillStyle = '#333'; c.font = '15px sans-serif'; c.textAlign = 'left';
-    infos.forEach((t, i) => c.fillText(t, 30, 85 + i*24));
+    infos.forEach((t, i) => c.fillText(t, 30, 84 + i*24));
 
-    // 車両ビュー（2x2）
-    const vW = 280, vH = 200;
+    // 車両ビュー
+    const vW = 280, vH = 210;
     [
-        { view:'front', x:20,  y:195 },
-        { view:'rear',  x:340, y:195 },
-        { view:'left',  x:20,  y:415 },
-        { view:'right', x:340, y:415 },
+        { view:'front', x:20,  y:192 },
+        { view:'rear',  x:340, y:192 },
+        { view:'left',  x:20,  y:422 },
+        { view:'right', x:340, y:422 },
     ].forEach(({ view, x, y }) => {
-        c.drawImage(document.getElementById('canvas-' + view), x, y, vW, vH);
+        // イラスト＋ストロークを描画
+        const tmp = document.createElement('canvas');
+        tmp.width = vW; tmp.height = vH;
+        const tc = tmp.getContext('2d');
+        drawCarIllustration(tc, vW, vH, view);
+        drawStrokes(tc, vW, vH, strokes[view]);
+        c.drawImage(tmp, x, y);
         c.strokeStyle = '#ddd'; c.lineWidth = 1;
         c.strokeRect(x, y, vW, vH);
     });
 
     // 署名エリア
-    c.fillStyle = '#f5f7ff'; c.fillRect(20, 640, W-40, 170);
-    c.strokeStyle = '#ccc'; c.lineWidth = 1; c.strokeRect(20, 640, W-40, 170);
+    c.fillStyle = '#f5f7ff'; c.fillRect(20, 652, W-40, 175);
+    c.strokeStyle = '#ccc'; c.lineWidth = 1; c.strokeRect(20, 652, W-40, 175);
     c.fillStyle = '#555'; c.font = 'bold 13px sans-serif'; c.textAlign = 'left';
-    c.fillText('お客様署名', 30, 660);
+    c.fillText('お客様署名', 30, 672);
     const sw = W - 60;
     const sh = sigCanvas.height * (sw / sigCanvas.width);
-    c.drawImage(sigCanvas, 30, 668, sw, Math.min(sh, 130));
+    c.drawImage(sigCanvas, 30, 680, sw, Math.min(sh, 135));
 
-    return off.toDataURL('image/jpeg', 0.85);
+    return off.toDataURL('image/jpeg', 0.9);
 }
 
 // ============================================================
-// 画像保存
+// 保存
 // ============================================================
 function saveImage() {
     const mgmt = document.getElementById('mgmt-no').value.trim();
@@ -622,12 +761,11 @@ function saveImage() {
         return;
     }
 
-    const image = buildSummaryImage();
     const now = new Date();
     const filename = `checksheet_${mgmt}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.jpg`;
 
     const a = document.createElement('a');
-    a.href = image;
+    a.href = buildSummaryImage();
     a.download = filename;
     a.click();
 
@@ -643,8 +781,10 @@ function showToast(msg, type) {
     setTimeout(() => t.className = 'toast', 3000);
 }
 
+// ============================================================
 // 初期化
-views.forEach(v => { initCanvas(v); redraw(v); });
+// ============================================================
+initThumbs();
 </script>
 </body>
 </html>
